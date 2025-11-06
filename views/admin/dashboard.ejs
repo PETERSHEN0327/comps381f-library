@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin Dashboard • Library</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .grid { display:grid; gap:16px; }
+    @media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+    .card-mini {
+      background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:16px;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .metric { font-size:28px; font-weight:700; color:#111827; }
+    .muted { color:#6b7280; font-size:14px; }
+    canvas { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:8px; }
+    .section-title{display:flex;justify-content:space-between;align-items:center}
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card" style="max-width:1100px;">
+      <div class="section-title">
+        <h2>Admin Dashboard</h2>
+        <div>
+          <a href="/books" class="btn btn-secondary">Books</a>
+          <a href="/loans" class="btn btn-secondary">All Loans</a>
+        </div>
+      </div>
+      <p>Hi, <%= user.username %></p>
+
+      <!-- Overview cards -->
+      <div class="grid grid-2" style="margin-top:10px;">
+        <div class="card-mini">
+          <div><div class="muted">Users</div><div class="metric"><%= cards.userCount %></div></div>
+          <div>👥</div>
+        </div>
+        <div class="card-mini">
+          <div><div class="muted">Books</div><div class="metric"><%= cards.bookCount %></div></div>
+          <div>📚</div>
+        </div>
+        <div class="card-mini">
+          <div><div class="muted">Active Loans</div><div class="metric"><%= cards.activeLoansCount %></div></div>
+          <div>📖</div>
+        </div>
+        <div class="card-mini">
+          <div><div class="muted">Due in 3 days</div><div class="metric"><%= cards.dueSoonCount %></div></div>
+          <div>⏰</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid grid-2" style="margin-top:18px;">
+        <div>
+          <h3>Loans per Month (last 6 months)</h3>
+          <canvas id="loanTrend" height="200"></canvas>
+        </div>
+        <div>
+          <h3>Book Status</h3>
+          <canvas id="bookStatus" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Top borrowers + Due soon -->
+      <div class="grid grid-2" style="margin-top:18px;">
+        <div>
+          <h3>Top Borrowers (last 90 days)</h3>
+          <table class="table">
+            <tr><th>User</th><th>Loans</th></tr>
+            <% if (!topBorrowers.length) { %>
+              <tr><td colspan="2">No data</td></tr>
+            <% } %>
+            <% topBorrowers.forEach(r => { %>
+              <tr><td><%= r._id %></td><td><%= r.count %></td></tr>
+            <% }) %>
+          </table>
+        </div>
+        <div>
+          <h3>Due within 3 days</h3>
+          <table class="table">
+            <tr><th>Book</th><th>Borrower</th><th>Due</th></tr>
+            <% if (!dueSoonList.length) { %>
+              <tr><td colspan="3">No upcoming due items</td></tr>
+            <% } %>
+            <% dueSoonList.forEach(l => { %>
+              <tr>
+                <td><%= l.book ? l.book.title : '-' %></td>
+                <td><%= l.borrower %></td>
+                <td><%= new Date(l.dueDate).toLocaleString() %></td>
+              </tr>
+            <% }) %>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Line chart - monthly trend
+    const loanTrend = new Chart(document.getElementById('loanTrend'), {
+      type: 'line',
+      data: {
+        labels: <%- JSON.stringify(charts.labels) %>,
+        datasets: [{
+          label: 'Loans',
+          data: <%- JSON.stringify(charts.monthlyData) %>,
+          tension: 0.3
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision:0 } } }
+      }
+    });
+
+    // Doughnut chart - book status  （用 JSON.stringify 避免 VSCode 报错）
+    const bookStatus = new Chart(document.getElementById('bookStatus'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Available', 'Loaned'],
+        datasets: [{
+          data: <%- JSON.stringify([charts.bookStatus.available, charts.bookStatus.loaned]) %>,
+          backgroundColor: ['#60a5fa', '#fbbf24']
+        }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  </script>
+</body>
+</html>

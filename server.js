@@ -105,7 +105,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// ---------- Books（含搜索 + 分页） ----------
+// ---------- Books（搜索 + 分页） ----------
 app.get('/books', ensureAuth, async (req, res) => {
   const { q = '', status = 'all', page = '1' } = req.query;
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -192,13 +192,13 @@ app.get('/loans', ensureAuth, async (req, res) => {
   });
 });
 
-// 管理员：进入“创建借阅”页面（方便为他人借）
+// 管理员：进入“创建借阅”页面
 app.get('/loans/create', ensureAuth, ensureAdmin, async (req, res) => {
   const books = await Book.find({ status: 'available' }).sort({ title: 1 });
   res.render('loans/create', { user: req.session.user, books });
 });
 
-// 创建借阅（用户也可以，借书人自动设置为自己；管理员可以指定 borrower）
+// 创建借阅（用户也可以，借书人自动设置为自己；管理员可指定 borrower）
 app.post('/loans', ensureAuth, async (req, res) => {
   const { bookId, borrower, dueDate } = req.body;
   const me = req.session.user;
@@ -226,8 +226,6 @@ app.post('/loans/:id/return', ensureAuth, ensureLoanOwnerOrAdmin, async (req, re
     { new: true }
   );
   if (loan) await Book.findByIdAndUpdate(loan.book, { status: 'available' });
-
-  // 归还后跳回来源更友好
   const me = req.session.user;
   if (me.role === 'admin') return res.redirect('/loans');
   return res.redirect('/my/loans');
@@ -250,6 +248,86 @@ app.get('/my/loans', ensureAuth, async (req, res) => {
   res.render('loans/my', {
     user: req.session.user,
     loans, page: pageNum, totalPages, total, perPage
+  });
+});
+
+// ---------- Admin Dashboard ----------
+app.get('/admin/dashboard', ensureAuth, ensureAdmin, async (req, res) => {
+  // 概览
+  const [userCount, bookCount, activeLoansCount, dueSoonCount] = await Promise.all([
+    User.countDocuments({}),
+    Book.countDocuments({}),
+    Loan.countDocuments({ returnedAt: null }),
+    Loan.countDocuments({
+      returnedAt: null,
+      dueDate: { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) }
+    })
+  ]);
+
+  // 即将到期列表
+  const dueSoonList = await Loan.find({
+    returnedAt: null,
+    dueDate: { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) }
+  }).populate('book').sort({ dueDate: 1 }).limit(10).lean();
+
+  // 最近 90 天 Top 借阅用户
+  const since90 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const topBorrowersAgg = await Loan.aggregate([
+    { $match: { loanedAt: { $gte: since90 } } },
+    { $group: { _id: '$borrower', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 5 }
+  ]);
+
+  // 最近 6 个月借阅趋势（按月）
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const monthlyAgg = await Loan.aggregate([
+    { $match: { loanedAt: { $gte: start } } },
+    { $group: {
+        _id: { y: { $year: '$loanedAt' }, m: { $month: '$loanedAt' } },
+        count: { $sum: 1 }
+    }},
+    { $sort: { '_id.y': 1, '_id.m': 1 } }
+  ]);
+
+  // 当前图书状态占比
+  const statusAgg = await Book.aggregate([
+    { $group: { _id: '$status', count: { $sum: 1 } } }
+  ]);
+  const bookStatus = { available: 0, loaned: 0 };
+  statusAgg.forEach(s => { bookStatus[s._id] = s.count; });
+
+  // 生成近 6 个月的标签和数据（补零）
+  const labels = [];
+  const monthlyMap = new Map(monthlyAgg.map(r => [`${r._id.y}-${r._id.m}`, r.count]));
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${d.getMonth()+1}`;
+    labels.push(`${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}`);
+    // 若无数据则补 0
+    if (!monthlyMap.has(key)) monthlyMap.set(key, 0);
+  }
+  const monthlyData = Array.from(monthlyMap.keys())
+    .sort((a,b)=> {
+      const [ay,am] = a.split('-').map(Number);
+      const [by,bm] = b.split('-').map(Number);
+      return ay===by ? am-bm : ay-by;
+    })
+    .slice(-6)
+    .map(k => monthlyMap.get(k));
+
+  res.render('admin/dashboard', {
+    user: req.session.user,
+    cards: {
+      userCount, bookCount, activeLoansCount, dueSoonCount
+    },
+    charts: {
+      labels, monthlyData,
+      bookStatus
+    },
+    topBorrowers: topBorrowersAgg,
+    dueSoonList
   });
 });
 

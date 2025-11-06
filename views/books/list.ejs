@@ -5,8 +5,9 @@
   <title>Books • Library</title>
   <link rel="stylesheet" href="/style.css">
   <style>
-    .search { margin:14px 0; display:flex; gap:8px; flex-wrap:wrap; }
+    .search { margin:14px 0; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .search input,.search select { padding:10px; border:1px solid #d9e1ec; border-radius:10px; }
+    .right-actions{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap;}
   </style>
 </head>
 <body>
@@ -14,12 +15,9 @@
     <div class="card">
       <h2>Books</h2>
 
-      <form method="post" action="/logout" style="float:right;">
-        <button class="btn btn-secondary">Logout</button>
-      </form>
-      <p>Hi, <%= user.username %></p>
-
       <div class="search">
+        <p style="margin:0;">Hi, <%= user.username %></p>
+
         <form method="get" action="/books" style="display:flex; gap:8px; flex-wrap:wrap;">
           <input type="text" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Search title/author">
           <select name="status">
@@ -31,12 +29,17 @@
           <a class="btn btn-secondary" href="/books">Reset</a>
         </form>
 
-        <div style="flex:1"></div>
-        <a class="btn btn-secondary" href="/my/loans">My Loans</a>
-        <a class="btn btn-secondary" href="/loans">All Loans</a>
-        <% if (user.role === 'admin') { %>
-          <a class="btn btn-primary" href="/books/create">+ Add Book</a>
-        <% } %>
+        <div class="right-actions">
+          <a class="btn btn-secondary" href="/my/loans">My Loans</a>
+          <a class="btn btn-secondary" href="/loans">All Loans</a>
+          <% if (user.role === 'admin') { %>
+            <a class="btn btn-secondary" href="/admin/dashboard">Dashboard</a>
+            <a class="btn btn-primary" href="/books/create">+ Add Book</a>
+          <% } %>
+          <form method="post" action="/logout">
+            <button class="btn btn-secondary">Logout</button>
+          </form>
+        </div>
       </div>
 
       <% if (!books.length) { %>
