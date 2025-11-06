@@ -173,7 +173,6 @@ app.get('/books/:id', ensureAuth, async (req, res) => {
 });
 
 // ---------- Loans ----------
-// 所有借阅（分页）
 app.get('/loans', ensureAuth, async (req, res) => {
   const { page = '1' } = req.query;
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -253,7 +252,6 @@ app.get('/my/loans', ensureAuth, async (req, res) => {
 
 // ---------- Admin Dashboard ----------
 app.get('/admin/dashboard', ensureAuth, ensureAdmin, async (req, res) => {
-  // 概览
   const [userCount, bookCount, activeLoansCount, dueSoonCount] = await Promise.all([
     User.countDocuments({}),
     Book.countDocuments({}),
@@ -264,13 +262,11 @@ app.get('/admin/dashboard', ensureAuth, ensureAdmin, async (req, res) => {
     })
   ]);
 
-  // 即将到期列表
   const dueSoonList = await Loan.find({
     returnedAt: null,
     dueDate: { $lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) }
   }).populate('book').sort({ dueDate: 1 }).limit(10).lean();
 
-  // 最近 90 天 Top 借阅用户
   const since90 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
   const topBorrowersAgg = await Loan.aggregate([
     { $match: { loanedAt: { $gte: since90 } } },
@@ -279,33 +275,24 @@ app.get('/admin/dashboard', ensureAuth, ensureAdmin, async (req, res) => {
     { $limit: 5 }
   ]);
 
-  // 最近 6 个月借阅趋势（按月）
   const now = new Date();
   const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
   const monthlyAgg = await Loan.aggregate([
     { $match: { loanedAt: { $gte: start } } },
-    { $group: {
-        _id: { y: { $year: '$loanedAt' }, m: { $month: '$loanedAt' } },
-        count: { $sum: 1 }
-    }},
+    { $group: { _id: { y: { $year: '$loanedAt' }, m: { $month: '$loanedAt' } }, count: { $sum: 1 } } },
     { $sort: { '_id.y': 1, '_id.m': 1 } }
   ]);
 
-  // 当前图书状态占比
-  const statusAgg = await Book.aggregate([
-    { $group: { _id: '$status', count: { $sum: 1 } } }
-  ]);
+  const statusAgg = await Book.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]);
   const bookStatus = { available: 0, loaned: 0 };
   statusAgg.forEach(s => { bookStatus[s._id] = s.count; });
 
-  // 生成近 6 个月的标签和数据（补零）
   const labels = [];
   const monthlyMap = new Map(monthlyAgg.map(r => [`${r._id.y}-${r._id.m}`, r.count]));
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const key = `${d.getFullYear()}-${d.getMonth()+1}`;
     labels.push(`${d.getFullYear()}/${(d.getMonth()+1).toString().padStart(2,'0')}`);
-    // 若无数据则补 0
     if (!monthlyMap.has(key)) monthlyMap.set(key, 0);
   }
   const monthlyData = Array.from(monthlyMap.keys())
@@ -319,19 +306,14 @@ app.get('/admin/dashboard', ensureAuth, ensureAdmin, async (req, res) => {
 
   res.render('admin/dashboard', {
     user: req.session.user,
-    cards: {
-      userCount, bookCount, activeLoansCount, dueSoonCount
-    },
-    charts: {
-      labels, monthlyData,
-      bookStatus
-    },
+    cards: { userCount, bookCount, activeLoansCount, dueSoonCount },
+    charts: { labels, monthlyData, bookStatus },
     topBorrowers: topBorrowersAgg,
     dueSoonList
   });
 });
 
-// ---------- RESTful APIs (for demo) ----------
+// ---------- RESTful APIs (Books demo) ----------
 app.get('/api/books', async (req, res) => {
   const docs = await Book.find().lean();
   res.json(docs);
@@ -355,6 +337,83 @@ app.put('/api/books/:id', async (req, res) => {
 app.delete('/api/books/:id', async (req, res) => {
   try {
     await Book.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// ---------- RESTful APIs: Users (NO auth) ----------
+const sanitizeUser = (u) => ({
+  _id: u._id,
+  username: u.username,
+  role: u.role,
+  createdAt: u.createdAt,
+  updatedAt: u.updatedAt,
+});
+
+// [READ] 列表
+app.get('/api/users', async (req, res) => {
+  const users = await User.find().sort({ createdAt: -1 });
+  res.json(users.map(sanitizeUser));
+});
+
+// [READ] 详情
+app.get('/api/users/:id', async (req, res) => {
+  const u = await User.findById(req.params.id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  res.json(sanitizeUser(u));
+});
+
+// [CREATE]
+app.post('/api/users', async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ error: 'username and password are required' });
+
+    const exists = await User.findOne({ username });
+    if (exists) return res.status(409).json({ error: 'username already exists' });
+
+    const created = await User.createUser({
+      username,
+      password,
+      role: role === 'admin' ? 'admin' : 'user',
+    });
+    res.status(201).json(sanitizeUser(created));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// [UPDATE]
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { username, role, password } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (username) user.username = username;
+    if (role) user.role = (role === 'admin' ? 'admin' : 'user');
+
+    if (password) {
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    await user.save();
+    res.json(sanitizeUser(user));
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
+
+// [DELETE]
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const u = await User.findByIdAndDelete(req.params.id);
+    if (!u) return res.status(404).json({ error: 'User not found' });
     res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: e.message });
