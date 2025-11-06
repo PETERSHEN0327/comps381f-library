@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Books • Library</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .search { margin:14px 0; display:flex; gap:8px; flex-wrap:wrap; }
+    .search input,.search select { padding:10px; border:1px solid #d9e1ec; border-radius:10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2>Books</h2>
+
+      <form method="post" action="/logout" style="float:right;">
+        <button class="btn btn-secondary">Logout</button>
+      </form>
+      <p>Hi, <%= user.username %></p>
+
+      <div class="search">
+        <form method="get" action="/books" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input type="text" name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Search title/author">
+          <select name="status">
+            <option value="all" <%= status==='all'?'selected':'' %>>All status</option>
+            <option value="available" <%= status==='available'?'selected':'' %>>Available</option>
+            <option value="loaned" <%= status==='loaned'?'selected':'' %>>Loaned</option>
+          </select>
+          <button class="btn btn-primary" type="submit">Search</button>
+          <a class="btn btn-secondary" href="/books">Reset</a>
+        </form>
+
+        <div style="flex:1"></div>
+        <a class="btn btn-secondary" href="/my/loans">My Loans</a>
+        <a class="btn btn-secondary" href="/loans">All Loans</a>
+        <% if (user.role === 'admin') { %>
+          <a class="btn btn-primary" href="/books/create">+ Add Book</a>
+        <% } %>
+      </div>
+
+      <% if (!books.length) { %>
+        <p>No books found.</p>
+      <% } else { %>
+      <table class="table">
+        <tr><th>Title</th><th>Author</th><th>ISBN</th><th>Status</th><th>Action</th></tr>
+        <% books.forEach(b => { %>
+          <tr>
+            <td><a href="/books/<%= b._id %>"><%= b.title %></a></td>
+            <td><%= b.author %></td>
+            <td><%= b.isbn || '-' %></td>
+            <td><%= b.status %></td>
+            <td style="white-space:nowrap">
+              <% if (user.role === 'admin') { %>
+                <a href="/books/<%= b._id %>/edit" class="btn btn-edit">Edit</a>
+                <form method="post" action="/books/<%= b._id %>/delete" style="display:inline;" onsubmit="return confirm('Delete this book?')">
+                  <button class="btn btn-delete">Delete</button>
+                </form>
+              <% } else { %>
+                <% if (b.status === 'available') { %>
+                  <form method="post" action="/loans" style="display:inline;">
+                    <input type="hidden" name="bookId" value="<%= b._id %>">
+                    <button class="btn btn-primary">Borrow</button>
+                  </form>
+                <% } else { %>
+                  <span style="color:#888;">Read only</span>
+                <% } %>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </table>
+      <% } %>
+
+      <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+        <div class="pagination">
+          <% const base = '/books?' + (qs ? qs + '&' : ''); %>
+          <a class="<%= page===1?'disabled':'' %>" href="<%= base %>page=<%= page-1 %>">Prev</a>
+          <% for (let p=1; p<=totalPages; p++){ %>
+            <% if (p === page) { %>
+              <span class="active"><%= p %></span>
+            <% } else { %>
+              <a href="<%= base %>page=<%= p %>"><%= p %></a>
+            <% } %>
+          <% } %>
+          <a class="<%= page===totalPages?'disabled':'' %>" href="<%= base %>page=<%= page+1 %>">Next</a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Login • Library</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { background:#f6f8fb; }
+    .login-wrap {
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:40px 20px;
+    }
+    .login-card {
+      width:100%;
+      max-width:480px; /* 🔹 原来是420，现在更宽 */
+      background:#fff;
+      border-radius:20px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
+      padding:40px 36px; /* 🔹 增加内边距 */
+    }
+    h2 { margin-top:0; font-size:28px; color:#111827; }
+    p.subtitle { color:#6b7280; margin-bottom:24px; }
+    label { display:block; margin:12px 0 6px; font-weight:500; }
+    input {
+      width:100%;
+      padding:12px 14px;
+      border:1px solid #d1d5db;
+      border-radius:10px;
+      font-size:16px;
+      box-sizing:border-box;
+      transition:border .2s;
+    }
+    input:focus {
+      outline:none;
+      border-color:#2563eb;
+      box-shadow:0 0 0 2px rgba(37,99,235,.2);
+    }
+    .actions {
+      display:flex;
+      gap:10px;
+      margin-top:20px;
+    }
+    .btn {
+      display:inline-block;
+      padding:10px 16px;
+      border-radius:8px;
+      border:0;
+      cursor:pointer;
+      font-weight:600;
+      text-decoration:none;
+      text-align:center;
+    }
+    .btn-primary { background:#2563eb; color:#fff; }
+    .btn-secondary { background:#eef2ff; color:#1e40af; }
+    .btn:hover { filter:brightness(.95); }
+    .error { background:#fee2e2; color:#7f1d1d; border:1px solid #fecaca; padding:10px; border-radius:10px; margin-bottom:12px; }
+    .success { background:#e7f9ed; color:#065f46; border:1px solid #bbf7d0; padding:10px; border-radius:10px; margin-bottom:12px; }
+    .hint { margin-top:18px; color:#9ca3af; font-size:14px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <h2>Welcome back</h2>
+      <p class="subtitle">Sign in to your library account</p>
+
+      <% if (msg) { %><div class="success"><%= msg %></div><% } %>
+      <% if (error) { %><div class="error"><%= error %></div><% } %>
+
+      <form method="post" action="/login">
+        <label>Username</label>
+        <input name="username" required />
+
+        <label>Password</label>
+        <input name="password" type="password" required />
+
+        <div class="actions">
+          <button class="btn btn-primary" type="submit">Sign in</button>
+          <a class="btn btn-secondary" href="/register">Create account</a>
+        </div>
+      </form>
+
+      <p class="hint">Default admin: <b>admin / admin123</b></p>
+    </div>
+  </div>
+</body>
+</html>

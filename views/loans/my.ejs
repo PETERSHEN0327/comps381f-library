@@ -1,19 +1,16 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>Loans</title>
+<head><meta charset="utf-8"><title>My Loans</title>
 <link rel="stylesheet" href="/style.css"></head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h2>Loans</h2>
+      <h2>My Loans</h2>
       <a href="/books" class="btn btn-secondary">&laquo; Books</a>
-      <a href="/my/loans" class="btn btn-secondary">My Loans</a>
-      <% if (user.role === 'admin') { %>
-        <a href="/loans/create" class="btn btn-primary">+ New Loan</a>
-      <% } %>
+      <a href="/loans" class="btn btn-secondary">All Loans</a>
 
       <% if (!loans.length) { %>
-        <p style="margin-top:14px;">No loans.</p>
+        <p style="margin-top:14px;">You have no loans.</p>
       <% } else { %>
       <table class="table">
         <tr><th>Book</th><th>Borrower</th><th>Loaned</th><th>Due</th><th>Returned</th><th>Action</th></tr>
@@ -25,7 +22,7 @@
             <td><%= new Date(l.dueDate).toLocaleDateString() %></td>
             <td><%= l.returnedAt ? new Date(l.returnedAt).toLocaleDateString() : '-' %></td>
             <td>
-              <% if (!l.returnedAt && (user.role === 'admin' || user.username === l.borrower)) { %>
+              <% if (!l.returnedAt) { %>
                 <form method="post" action="/loans/<%= l._id %>/return">
                   <button class="btn btn-edit">Mark Returned</button>
                 </form>
@@ -38,15 +35,15 @@
 
       <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
         <div class="pagination">
-          <a class="<%= page===1?'disabled':'' %>" href="/loans?page=<%= page-1 %>">Prev</a>
+          <a class="<%= page===1?'disabled':'' %>" href="/my/loans?page=<%= page-1 %>">Prev</a>
           <% for (let p=1; p<=totalPages; p++){ %>
             <% if (p === page) { %>
               <span class="active"><%= p %></span>
             <% } else { %>
-              <a href="/loans?page=<%= p %>"><%= p %></a>
+              <a href="/my/loans?page=<%= p %>"><%= p %></a>
             <% } %>
           <% } %>
-          <a class="<%= page===totalPages?'disabled':'' %>" href="/loans?page=<%= page+1 %>">Next</a>
+          <a class="<%= page===totalPages?'disabled':'' %>" href="/my/loans?page=<%= page+1 %>">Next</a>
         </div>
       <% } %>
     </div>

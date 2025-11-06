@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Edit Book</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2>Edit Book</h2>
+      <a href="/books/<%= book._id %>" class="btn btn-secondary">&laquo; Back</a>
+
+      <form method="post" action="/books/<%= book._id %>?_method=PUT" style="margin-top:20px;">
+        <label>Title</label><br/>
+        <input name="title" value="<%= book.title %>" required /><br/>
+        <label>Author</label><br/>
+        <input name="author" value="<%= book.author %>" required /><br/>
+        <label>ISBN</label><br/>
+        <input name="isbn" value="<%= book.isbn || '' %>" /><br/>
+        <label>Status</label><br/>
+        <select name="status">
+          <option value="available" <%= book.status==='available'?'selected':'' %>>Available</option>
+          <option value="loaned" <%= book.status==='loaned'?'selected':'' %>>Loaned</option>
+        </select><br/><br/>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

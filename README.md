@@ -5,11 +5,10 @@ A minimal Express + MongoDB (Mongoose) app for the COMP S381F group project.
 ## 1. Project Info
 - **Course**: COMP S381F(Autumn 2025)
 - **Topic**: Library Management (Books & Loans)
-- **Group**: Group X  
-- **Members**: Name (SID), Name (SID), ...
-- **Repo**: <your GitHub repo URL>
-- **Cloud URL**: <to be filled after deployment, e.g. https://comps381f-groupX.azurewebsites.net/>
-
+- **Group**: Group 10  
+- **Members**: SHEN Qiwen (13673791), Lau Tak Hing (13694497), ...
+- **Repo**: https://github.com/PETERSHEN0327/comps381f-library
+- **Cloud URL**: https://comps381f-library.onrender.com
 ## 2. Project Structure
 comps381f-library/
 ├─ server.js # app entry
@@ -44,7 +43,7 @@ comps381f-library/
 - MongoDB (local or Atlas connection string)
 
 ### 4.2 Env Vars (`.env`)
-MONGODB_URI=mongodb://127.0.0.1:27017/librarydb # or your Atlas URI
+MONGODB_URI=mongodb+srv://admin:Sqw20020327@cluster0.4u5v6.mongodb.net/librarydb?retryWrites=true&w=majority&appName=Cluster0
 SESSION_SECRET=mysecretkey
 PORT=8099
 

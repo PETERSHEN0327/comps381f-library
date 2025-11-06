@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Create Book</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2>Create Book</h2>
+      <a href="/books" class="btn btn-secondary">&laquo; Back</a>
+      <form method="post" action="/books" style="margin-top:20px;">
+        <label>Title</label><br/><input name="title" required />
+        <label>Author</label><br/><input name="author" required />
+        <label>ISBN</label><br/><input name="isbn" /><br/><br/>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

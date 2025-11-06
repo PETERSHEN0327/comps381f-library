@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Book Details</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .field { display:block;margin:10px 0 6px }
+    input,select { width:100%; padding:10px; border:1px solid #d9e1ec; border-radius:10px }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2>Book Details</h2>
+      <a href="/books" class="btn btn-secondary">&laquo; Back to list</a>
+
+      <table class="table" style="margin-top:20px;">
+        <tr><th>Title</th><td><%= book.title %></td></tr>
+        <tr><th>Author</th><td><%= book.author %></td></tr>
+        <tr><th>ISBN</th><td><%= book.isbn || '-' %></td></tr>
+        <tr><th>Status</th><td><%= book.status %></td></tr>
+        <tr><th>Created</th><td><%= new Date(book.createdAt).toLocaleString() %></td></tr>
+        <tr><th>Updated</th><td><%= new Date(book.updatedAt).toLocaleString() %></td></tr>
+      </table>
+
+      <% if (user.role === 'admin') { %>
+        <div style="margin-top:20px;">
+          <a href="/books/<%= book._id %>/edit" class="btn btn-edit">Edit</a>
+          <form style="display:inline;" method="post" action="/books/<%= book._id %>/delete" onsubmit="return confirm('Delete this book?')">
+            <button class="btn btn-delete">Delete</button>
+          </form>
+        </div>
+      <% } %>
+
+      <!-- 借阅区：available 才显示 -->
+      <% if (book.status === 'available') { %>
+        <div style="margin-top:22px;">
+          <% if (user.role === 'user') { %>
+            <!-- 普通用户：借给自己，可选到期日（不填默认 +14 天） -->
+            <form method="post" action="/loans" style="max-width:420px;">
+              <input type="hidden" name="bookId" value="<%= book._id %>">
+              <label class="field">Due Date (optional, default +14 days)</label>
+              <input type="date" name="dueDate">
+              <div style="margin-top:12px;">
+                <button class="btn btn-primary" type="submit">Borrow this book</button>
+              </div>
+            </form>
+          <% } else { %>
+            <!-- 管理员：可指定 borrower -->
+            <form method="post" action="/loans" style="max-width:420px;">
+              <input type="hidden" name="bookId" value="<%= book._id %>">
+              <label class="field">Borrower (username)</label>
+              <input name="borrower" required>
+              <label class="field">Due Date</label>
+              <input type="date" name="dueDate" required>
+              <div style="margin-top:12px;">
+                <button class="btn btn-primary" type="submit">Create Loan</button>
+                <a href="/loans/create" class="btn btn-secondary">Open Loan Page</a>
+              </div>
+            </form>
+          <% } %>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>
