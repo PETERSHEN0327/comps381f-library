@@ -12,9 +12,8 @@ A full-featured **Express + MongoDB (Mongoose)** cloud web application developed
   - SHEN Qiwen (13673791)  
   - Lau Tak Hing (13694497)  
   - [Add other members if any]  
-- **GitHub Repo**: [https://github.com/PETERSHEN0327/comps381f-library](https://github.com/PETERSHEN0327/comps381f-library)  
-- **Cloud URL** (Render):  
-   [https://comps381f-library.onrender.com](https://comps381f-library.onrender.com)
+- **GitHub Repo**: https://github.com/PETERSHEN0327/comps381f-library
+- **Cloud URL** (Render):  https://comps381f-library.onrender.com
 
 ---
 
@@ -68,7 +67,7 @@ comps381f-library/
 
 ## 3. Cloud-based Server (Render)
 
-- **URL:** [https://comps381f-library.onrender.com](https://comps381f-library.onrender.com)
+- **URL:** https://comps381f-library.onrender.com
 - **Server environment:** Node.js 20 (Render Web Service)
 - **Database:** MongoDB Atlas (cloud-hosted)
 - **Session storage:** connect-mongo

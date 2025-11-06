@@ -14,6 +14,9 @@ const Loan = require('./models/Loan');
 const app = express();
 const PORT = process.env.PORT || 8099;
 
+// ------------ start-up mark (for cloud debugging) ------------
+console.log('>>> RUNNING server.js FROM:', __filename);
+
 // ---------- DB ----------
 mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 10000 })
   .then(() => console.log('✅ Mongo connected successfully!'))
@@ -34,6 +37,19 @@ app.use(session({
   store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
   cookie: { maxAge: 1000 * 60 * 60 * 8 } // 8h
 }));
+
+// ---------- health & route-inspect (helpful on Render) ----------
+app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/__routes', (req, res) => {
+  const routes = [];
+  app._router.stack.forEach((m) => {
+    if (m.route) {
+      const methods = Object.keys(m.route.methods).join(',').toUpperCase();
+      routes.push(`${methods} ${m.route.path}`);
+    }
+  });
+  res.json(routes);
+});
 
 // ---------- Helpers ----------
 function ensureAuth(req, res, next) {
@@ -344,6 +360,8 @@ app.delete('/api/books/:id', async (req, res) => {
 });
 
 // ---------- RESTful APIs: Users (NO auth) ----------
+console.log('>>> Users API mounted');
+
 const sanitizeUser = (u) => ({
   _id: u._id,
   username: u.username,
