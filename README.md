@@ -147,6 +147,31 @@ comps381f-library/
 > Use these on **PowerShell** or **Terminal**  
 > (Replace `<USER_ID>` with actual value)
 
+### METHOD 1
+TEST:69230113d43e83cd06a4872e
+
+set BASE=https://comps381f-library.onrender.com
+
+curl %BASE%/api/users
+
+###  Create User
+curl -X POST %BASE%/api/users -H "Content-Type: application/json" -d "{\"username\":\"demoUser\",\"password\":\"demo123\",\"role\":\"user\"}"
+
+### Read All Users
+curl %BASE%/api/users
+
+### Read One
+curl %BASE%/api/users/69230113d43e83cd06a4872e
+
+### Update User
+curl -X PUT %BASE%/api/users/69230113d43e83cd06a4872e -H "Content-Type: application/json" -d "{\"role\":\"admin\"}"
+curl %BASE%/api/users
+
+### Delete User
+curl -X DELETE %BASE%/api/users/69230113d43e83cd06a4872e
+curl %BASE%/api/users
+
+### METHOD 2
 ###  Create User
 ```bash
 curl -X POST https://comps381f-library.onrender.com/api/users ^
